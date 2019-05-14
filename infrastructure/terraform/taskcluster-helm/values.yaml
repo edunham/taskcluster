@@ -1,0 +1,92 @@
+# Default values for taskcluster-helm.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: nginx
+  tag: stable
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  path: /
+  hosts:
+    - chart-example.local
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #  cpu: 100m
+  #  memory: 128Mi
+  # requests:
+  #  cpu: 100m
+  #  memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+#########################################
+authTableSigningKey: "placeholder see sops"
+authTableCryptoKey: "placeholder see sops"
+
+authRootAccessTokenLength: 65
+authRootAccessTokenOverrideSpecial: "_-"
+
+authWebsocktunnelSecret: "placeholder see sops"
+
+authRabbitmqUserSource: "modules/rabbitmq-user"
+authRabbitmqUserPrefix: "${var.prefix}"
+authRabbitmqUserProjectName: "taskcluster-auth"
+authRabbitmqUserRabbitmqVhost: "${var.rabbitmq_vhost}"
+
+authSecretsSource: "modules/service-secrets"
+authSecretsProjectName: "taskcluster-auth"
+authSecretsDisabledServices: "${var.disabled_services}"
+
+
+authWebServiceSource: "modules/deployment"
+authWebServiceProjectName: "taskcluster-auth"
+authWebServiceServiceName: "auth"
+authWebServiceProcName: "web"
+authWebServiceDisabledServices: "${var.disabled_services}"
+authWebServiceReadinessPath: "/api/auth/v1/ping"
+authWebServiceSecretName: "${module.auth_secrets.secret_name}"
+authWebServiceSecretsHash: "${module.auth_secrets.secrets_hash}"
+authWebServiceRootUrl: "${var.root_url}"
+authWebServiceSecretKeys: "${module.auth_secrets.env_var_keys}"
+authWebServiceDockerImage: "${local.taskcluster_image_monoimage}"
+authPurgeExpiredClientsSource: "modules/scheduled-job"
+authPurgeExpiredClientsProjectName: "taskcluster-auth"
+authPurgeExpiredClientsServiceName: "auth"
+authPurgeExpiredClientsJobName: "purgeExpiredClients"
+authPurgeExpiredClientsSchedule: "0 0 * * *"
+authPurgeExpiredClientsDeadlineSeconds: 86400
+authPurgeExpiredClientsSecretName: "${module.auth_secrets.secret_name}"
+authPurgeExpiredClientsSecretsHash: "${module.auth_secrets.secrets_hash}"
+authPurgeExpiredClientsRootUrl: "${var.root_url}"
+authPurgeExpiredClientsSecretKeys: "${module.auth_secrets.env_var_keys}"
+authPurgeExpiredClientsDockerImage: "${local.taskcluster_image_monoimage}"
+
+
