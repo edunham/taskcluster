@@ -9,7 +9,18 @@ class Provider {
    * a cloud provider for terminating/listing instances. Any provisioning
    * logic should be started in `initiate` below.
    */
-  constructor({name, monitor, notify, provisionerId, rootUrl, taskclusterCredentials, estimator, Worker, validator}) {
+  constructor({
+    name,
+    monitor,
+    notify,
+    provisionerId,
+    rootUrl,
+    taskclusterCredentials,
+    estimator,
+    Worker,
+    validator,
+    WorkerType,
+  }) {
     this.name = name;
     this.monitor = monitor;
     this.validator = validator;
@@ -19,6 +30,7 @@ class Provider {
     this.taskclusterCredentials = taskclusterCredentials;
     this.estimator = estimator;
     this.Worker = Worker;
+    this.WorkerType = WorkerType;
   }
 
   /**
@@ -73,6 +85,25 @@ class Provider {
    * You may want to use this time to remove outdated workertypes for instance.
    */
   async cleanup() {
+  }
+
+  /*
+   * Called before an iteration of the worker scanner
+   */
+  async scanPrepare() {
+  }
+
+  /*
+   * Called for every worker on a schedule so that we can update the state of
+   * the worker locally
+   */
+  async checkWorker({Worker}) {
+  }
+
+  /*
+   * Called after an iteration of the worker scanner
+   */
+  async scanCleanup() {
   }
 
   /**

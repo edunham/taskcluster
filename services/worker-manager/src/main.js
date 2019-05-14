@@ -13,6 +13,7 @@ const {Estimator} = require('./estimator');
 const {sasCredentials} = require('taskcluster-lib-azure');
 const {Client, pulseCredentials} = require('taskcluster-lib-pulse');
 const {Provisioner} = require('./provisioner');
+const {WorkerScanner} = require('./worker-scanner');
 
 let load = loader({
   cfg: {
@@ -75,9 +76,8 @@ let load = loader({
     requires: ['cfg', 'Worker', 'monitor'],
     setup: ({cfg, Worker, monitor}) => {
       return monitor.childMonitor().oneShot('expire workers', async () => {
-        const threshold = taskcluster.fromNow(cfg.app.workersExpirationDelay);
         debug('Expiring workers');
-        const count = await Worker.expire(threshold);
+        const count = await Worker.expire();
         debug(`Expired ${count} rows`);
       });
     },
@@ -178,8 +178,8 @@ let load = loader({
   },
 
   providers: {
-    requires: ['cfg', 'monitor', 'notify', 'estimator', 'Worker', 'schemaset'],
-    setup: async ({cfg, monitor, notify, estimator, Worker, schemaset}) => {
+    requires: ['cfg', 'monitor', 'notify', 'estimator', 'Worker', 'WorkerType', 'schemaset'],
+    setup: async ({cfg, monitor, notify, estimator, Worker, WorkerType, schemaset}) => {
       const _providers = {};
       const validator = await schemaset.validator(cfg.taskcluster.rootUrl);
       Object.entries(cfg.providers).forEach(([name, meta]) => {
@@ -199,6 +199,7 @@ let load = loader({
           taskclusterCredentials: cfg.taskcluster.credentials,
           estimator,
           Worker,
+          WorkerType,
           validator,
           ...meta,
         });
@@ -222,6 +223,19 @@ let load = loader({
       });
       await provisioner.initiate();
       return provisioner;
+    },
+  },
+
+  workerScanner: {
+    requires: ['cfg', 'monitor', 'Worker', 'WorkerType', 'providers'],
+    setup: async ({cfg, monitor, Worker, WorkerType, providers}) => {
+      const workerScanner = new WorkerScanner({
+        Worker,
+        providers,
+        monitor: monitor.childMonitor('worker-scanner'),
+      });
+      await workerScanner.initiate();
+      return workerScanner;
     },
   },
 
